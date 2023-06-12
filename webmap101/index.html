@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Webmap 201</title>
+        <link rel="stylesheet" href="src/leaflet/leaflet.css">
+        <link rel="stylesheet" href="src/bootstrap-4.0.0-dist/css/bootstrap.css">
+        <script src="src/leaflet/leaflet.js"></script>
+        <script src="src/code.jquery.com_jquery-3.7.0.min.js"></script>
+
+        <style>
+            #mapdiv{
+                height: 500px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="side-bar" class="col-md-3"></div>
+        <div id="mapdiv" class="col-md-9">
+
+            <script>
+                var mymap;
+                var lyrOsm;
+
+                $(document).ready(function(){
+                    mymap = L.map('mapdiv',{center:[19.4,-99.2],zoom:13});
+                    lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
+                    mymap.addLayer(lyrOsm);
+                });
+                
+            </script>
+        </div>
+    </body>
+</html>
