@@ -12,7 +12,7 @@
 
         <style>
             #mapdiv{
-                height: 500px;
+                height: 100vh;
             }
         </style>
     </head>
@@ -21,13 +21,65 @@
         <div id="mapdiv" class="col-md-9">
 
             <script>
+                //Variables declarations
                 var mymap;
                 var lyrOsm;
-
+                var markerCurrentLocation;
                 $(document).ready(function(){
                     mymap = L.map('mapdiv',{center:[19.4,-99.2],zoom:13});
                     lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
                     mymap.addLayer(lyrOsm);
+
+                    //what this function does is that set an interval of time to activate a function, in this case when you interact with the map, it will activate the locate function every 5 secs, it is helpfull in mobile devices. It takes first param the function and second the time in milsecs.
+                    setInterval(function(){
+                        mymap.locate();
+                    }, 5000)
+                    //Here is the function that when we cick on the map wi will get the latitude and longitud in an alert and if we click it while pressing shift key,we will get the zoom of the map in the alert.
+                    mymap.on('click',function(e){
+                        
+                        if(e.originalEvent.shiftKey){
+                            alert(mymap.getZoom());
+                        }
+                        else{
+                            alert(e.latlng.toString());
+                        }
+                    });
+
+                    //put a marker with right click and if we click the marker wi will get the latitude and longitude with the actual date in a popUp
+                    mymap.on('contextmenu',function(e){
+                        //get the current time
+                        var dtCurrentTime = new Date();
+
+                        L.marker(e.latlng).addTo(mymap).bindPopup(e.latlng.toString()+ "<br>"+dtCurrentTime.toString());
+                    });
+
+                    mymap.on('keypress',function(e){
+                        //console.log(e);
+                        if(e.originalEvent.key =="l"){
+                            mymap.locate();
+                        }
+
+                        mymap.on('locationfound',function(e){
+                            console.log(e);
+                            //it verify if a marker has been setted to remove the last marked that it had. It helps to not overwrite a marker every time
+                            if(markerCurrentLocation){
+                                markerCurrentLocation.remove();
+                            }
+                            
+                            //The marker is a tiny circle that shows where you are
+                            markerCurrentLocation= L.circleMarker(e.latlng).addTo(mymap);
+                            
+                            //this one is the same as the last marker but is a wider circle that takes as a radius the accuracy of your location /2, the accuracy is the diameter of your location
+
+                            //markerCurrentLocation= L.circle(e.latlng,{radius:e.accuracy/2}).addTo(mymap);
+                            mymap.setView(e.latlng,14);
+                        });
+
+                        mymap.on('locationerror',function(e){
+                            console.log(e);
+                            alert("location not found");
+                        });
+                    });
                 });
                 
             </script>
