@@ -17,7 +17,13 @@
         </style>
     </head>
     <body>
-        <div id="side-bar" class="col-md-3"></div>
+        <div id="side-bar" class="col-md-3">
+            <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
+            <button id="btnPucmm" class="btn btn-primary btn-block">ZoomToPUCMM</button>
+            <h4>Zoom level: <span id="zoom-level"></span></h4>
+            <h4>Map Center: <span id="map-center"></span></h4>
+            <h4>Mouse Location: <span id="mouse-location"></span></h4>
+        </div>
         <div id="mapdiv" class="col-md-9">
 
             <script>
@@ -26,14 +32,19 @@
                 var lyrOsm;
                 var markerCurrentLocation;
                 $(document).ready(function(){
-                    mymap = L.map('mapdiv',{center:[19.4,-99.2],zoom:13});
+                    mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13});
                     lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
                     mymap.addLayer(lyrOsm);
 
                     //what this function does is that set an interval of time to activate a function, in this case when you interact with the map, it will activate the locate function every 5 secs, it is helpfull in mobile devices. It takes first param the function and second the time in milsecs.
+
+                    /*
                     setInterval(function(){
                         mymap.locate();
                     }, 5000)
+
+                    */
+
                     //Here is the function that when we cick on the map wi will get the latitude and longitud in an alert and if we click it while pressing shift key,we will get the zoom of the map in the alert.
                     mymap.on('click',function(e){
                         
@@ -80,8 +91,51 @@
                             alert("location not found");
                         });
                     });
+                    mymap.on('zoomend',function(){
+
+                        $("#zoom-level").html(mymap.getZoom());
+                    });
+
+                    mymap.on('moveend',function(){
+                        $("#map-center").html(mymap.getCenter().toString());
+                    });
+
+                    mymap.on('mousemove',function(e){
+                        $("#mouse-location").html(LatLngToArrayString(e.latlng));
+                    });
+
+                    $("#btnLocate").click(function(){
+                        mymap.locate();
+                        mymap.on('locationfound',function(e){
+                            console.log(e);
+                            //it verify if a marker has been setted to remove the last marked that it had. It helps to not overwrite a marker every time
+                            if(markerCurrentLocation){
+                                markerCurrentLocation.remove();
+                            }
+                            
+                            //The marker is a tiny circle that shows where you are
+                            markerCurrentLocation= L.circleMarker(e.latlng).addTo(mymap);
+                            
+                            //this one is the same as the last marker but is a wider circle that takes as a radius the accuracy of your location /2, the accuracy is the diameter of your location
+
+                            //markerCurrentLocation= L.circle(e.latlng,{radius:e.accuracy/2}).addTo(mymap);
+                            mymap.setView(e.latlng,14);
+                        });
+
+                        mymap.on('locationerror',function(e){
+                            console.log(e);
+                            alert("location not found");
+                        });
+                    });
+
+                    $("#btnPucmm").click(function(){
+                        mymap.setView([19.444406, -70.683717],17);
+                    });
                 });
                 
+                function LatLngToArrayString(ll){
+                    return "["+ll.lat.toFixed(5)+","+ll.lng.toFixed(5)+"]";
+                }
             </script>
         </div>
     </body>
