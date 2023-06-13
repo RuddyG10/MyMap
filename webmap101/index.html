@@ -7,9 +7,17 @@
         <title>Webmap 201</title>
         <link rel="stylesheet" href="src/leaflet/leaflet.css">
         <link rel="stylesheet" href="src/bootstrap-4.0.0-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.Pancontrol/src/L.Control.Pan.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.zoomslider/src/L.Control.Zoomslider.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.MousePosition/src/L.Control.MousePosition.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css">
+
         <script src="src/leaflet/leaflet.js"></script>
         <script src="src/code.jquery.com_jquery-3.7.0.min.js"></script>
-
+        <script src="src/plugins/Leaflet.Pancontrol/src/L.Control.Pan.js"></script>
+        <script src="src/plugins/Leaflet.zoomslider/src/L.Control.Zoomslider.js"></script>
+        <script src="src/plugins/Leaflet.MousePosition/src/L.Control.MousePosition.js"></script>
+        <script src="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
         <style>
             #mapdiv{
                 height: 100vh;
@@ -17,15 +25,15 @@
         </style>
     </head>
     <body>
-        <div id="side-bar" class="col-md-6">
+        <div id="side-bar" class="col-md-3">
             <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
             <button id="btnPucmm" class="btn btn-primary btn-block">ZoomToPUCMM</button>
             <h4>Zoom level: <span id="zoom-level"></span></h4>
             <h4>Map Center: <span id="map-center"></span></h4>
             <h4>Mouse Location: <span id="mouse-location"></span></h4>
         </div>
-        <div id="mapdiv" class="col-md-9">
-
+        <div id="mapdiv">
+            
             <script>
                 //Variables declarations
                 var mymap;
@@ -33,12 +41,42 @@
                 var markerCurrentLocation;
                 var popPucmm;
                 var popExample;
+                var controlZoom;
+                var controlAttribute;
+                var controlScale;
+                var controlPan;
+                var controlZSlider;
+                var mousePosition;
+                var controlMeasure;
 
                 $(document).ready(function(){
-                    mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13});
+                    mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
                     lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
                     mymap.addLayer(lyrOsm);
 
+                    //Pan control
+                    controlPan = L.control.pan().addTo(mymap);
+
+                    //Zoom slider
+                    controlZSlider = L.control.zoomslider({position:'topright'}).addTo(mymap);
+
+                    //Control zoom 
+                    controlZoom = L.control.zoom({zoomInText:'In',zoomOutText:'Out', position:'topright'});
+                    controlZoom.addTo(mymap);
+
+                    //Polyline Measure control
+                    controlMeasure = L.control.polylineMeasure().addTo(mymap);
+                    //Attribution control
+                    controlAttribute = L.control.attribution({position:'bottomleft'}).addTo(mymap);
+                    controlAttribute.addAttribution('OSM');
+                    controlAttribute.addAttribution('<a href="https://pucmm.edu.do/">PUCMM</a>');
+
+                    
+                    
+                    //Control scale, it shows the scale of the map
+                    controlScale = L.control.scale({position:'bottomleft',metric:false,maxWidth:200}).addTo(mymap);
+                    //Mouse position
+                    mousePosition = L.control.mousePosition().addTo(mymap);
                     //Pucmm popUp
                     popPucmm = L.popup({maxWidth:200,keepInView:true});
                     //we set the location of Pucmm Santiago
@@ -64,6 +102,8 @@
                     */
 
                     //Here is the function that when we cick on the map wi will get the latitude and longitud in an alert and if we click it while pressing shift key,we will get the zoom of the map in the alert.
+
+                    /*
                     mymap.on('click',function(e){
                         
                         if(e.originalEvent.shiftKey){
@@ -73,7 +113,7 @@
                             alert(e.latlng.toString());
                         }
                     });
-
+                    */
                     //put a marker with right click and if we click the marker wi will get the latitude and longitude with the actual date in a popUp
                     mymap.on('contextmenu',function(e){
                         //get the current time
