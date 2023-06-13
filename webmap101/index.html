@@ -17,7 +17,7 @@
         </style>
     </head>
     <body>
-        <div id="side-bar" class="col-md-3">
+        <div id="side-bar" class="col-md-6">
             <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
             <button id="btnPucmm" class="btn btn-primary btn-block">ZoomToPUCMM</button>
             <h4>Zoom level: <span id="zoom-level"></span></h4>
@@ -31,11 +31,29 @@
                 var mymap;
                 var lyrOsm;
                 var markerCurrentLocation;
+                var popPucmm;
+                var popExample;
+
                 $(document).ready(function(){
                     mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13});
                     lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
                     mymap.addLayer(lyrOsm);
 
+                    //Pucmm popUp
+                    popPucmm = L.popup({maxWidth:200,keepInView:true});
+                    //we set the location of Pucmm Santiago
+                    popPucmm.setLatLng([19.444406, -70.683717]);
+                    //The content that the popUp will have
+                    popPucmm.setContent("<h2>PUCMM</h2><img src='img/PUCMM-Campus-Santiago.jpg' width='200px'>")
+
+
+                    //In this popUp we will show the side-bar elements inside it.
+                    /*
+                    popExample = L.popup();
+                    popExample.setLatLng([19.444406, -70.683717]);
+                    popExample.setContent($("#side-bar")[0]);
+                    popExample.openOn(mymap);
+                    */
                     //what this function does is that set an interval of time to activate a function, in this case when you interact with the map, it will activate the locate function every 5 secs, it is helpfull in mobile devices. It takes first param the function and second the time in milsecs.
 
                     /*
@@ -91,19 +109,24 @@
                             alert("location not found");
                         });
                     });
+
+                    //when we finish to zoom, it will get the current zoom and pass it to the zoom-level label
                     mymap.on('zoomend',function(){
 
                         $("#zoom-level").html(mymap.getZoom());
                     });
 
+                    //When we finished to move, it will get the current coordinates to the center of the map and pass it to the map-center label
                     mymap.on('moveend',function(){
                         $("#map-center").html(mymap.getCenter().toString());
                     });
 
+                    //When we mode the cursor, it will get the current coordinates of the cursor in the map and pass it to the mouse-location label
                     mymap.on('mousemove',function(e){
                         $("#mouse-location").html(LatLngToArrayString(e.latlng));
                     });
 
+                    //button location function
                     $("#btnLocate").click(function(){
                         mymap.locate();
                         mymap.on('locationfound',function(e){
@@ -128,8 +151,12 @@
                         });
                     });
 
+                    //This function zoom to pucmm
                     $("#btnPucmm").click(function(){
                         mymap.setView([19.444406, -70.683717],17);
+
+                        //it will open the popup that we created above
+                        mymap.openPopup(popPucmm);
                     });
                 });
                 
