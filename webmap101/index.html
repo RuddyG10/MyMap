@@ -7,17 +7,26 @@
         <title>Webmap 201</title>
         <link rel="stylesheet" href="src/leaflet/leaflet.css">
         <link rel="stylesheet" href="src/bootstrap-4.0.0-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/fontawesome.min.css" integrity="sha384-QYIZto+st3yW+o8+5OHfT6S482Zsvz2WfOzpFSXMF9zqeLcFV0/wlZpMtyFcZALm" crossorigin="anonymous">
         <link rel="stylesheet" href="src/plugins/Leaflet.Pancontrol/src/L.Control.Pan.css">
         <link rel="stylesheet" href="src/plugins/Leaflet.zoomslider/src/L.Control.Zoomslider.css">
         <link rel="stylesheet" href="src/plugins/Leaflet.MousePosition/src/L.Control.MousePosition.css">
         <link rel="stylesheet" href="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.EasyButton/src/easy-button.css">
+        <link rel="stylesheet" href="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.css">
+        
 
         <script src="src/leaflet/leaflet.js"></script>
         <script src="src/code.jquery.com_jquery-3.7.0.min.js"></script>
+        <script src="src/bootstrap-4.0.0-dist/js/bootstrap.js"></script>
         <script src="src/plugins/Leaflet.Pancontrol/src/L.Control.Pan.js"></script>
         <script src="src/plugins/Leaflet.zoomslider/src/L.Control.Zoomslider.js"></script>
         <script src="src/plugins/Leaflet.MousePosition/src/L.Control.MousePosition.js"></script>
         <script src="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
+        <script src="src/plugins/Leaflet.EasyButton/src/easy-button.js"></script>
+        <script src="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.js"></script>
+       
         <style>
             #mapdiv{
                 height: 100vh;
@@ -25,7 +34,7 @@
         </style>
     </head>
     <body>
-        <div id="side-bar" class="col-md-3">
+        <div id="side-bar" class="col-md-12">
             <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
             <button id="btnPucmm" class="btn btn-primary btn-block">ZoomToPUCMM</button>
             <h4>Zoom level: <span id="zoom-level"></span></h4>
@@ -39,6 +48,7 @@
                 var mymap;
                 var lyrOsm;
                 var markerCurrentLocation;
+                var locationEnabled = false;
                 var popPucmm;
                 var popExample;
                 var controlZoom;
@@ -48,6 +58,8 @@
                 var controlZSlider;
                 var mousePosition;
                 var controlMeasure;
+                var easyButton;
+                var controlSideBar;
 
                 $(document).ready(function(){
                     mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
@@ -56,7 +68,9 @@
 
                     //Pan control
                     controlPan = L.control.pan().addTo(mymap);
-
+                    
+                    //Side bar
+                    controlSideBar = L.control.sidebar('side-bar').addTo(mymap);
                     //Zoom slider
                     controlZSlider = L.control.zoomslider({position:'topright'}).addTo(mymap);
 
@@ -66,6 +80,29 @@
 
                     //Polyline Measure control
                     controlMeasure = L.control.polylineMeasure().addTo(mymap);
+
+                    //Easy Buttom to lacation
+                    easyButton = L.easyButton('<i class="bi bi-compass-fill"></i>',function(){
+
+                        //First it checks if it was pressed already, if it was the location will stop
+                        if(locationEnabled){
+                            mymap.stopLocate();
+                            markerCurrentLocation.remove();
+                            locationEnabled = false;
+                        }
+                        else{
+                            mymap.locate();
+                            locationEnabled = true;
+                        }
+                        
+                    }).addTo(mymap);
+
+                    //button to open the side bar
+                    easyButton = L.easyButton('<i class="bi bi-layout-sidebar-inset"></i>',function(){
+                        controlSideBar.toggle();
+                        
+                    }).addTo(mymap);
+
                     //Attribution control
                     controlAttribute = L.control.attribution({position:'bottomleft'}).addTo(mymap);
                     controlAttribute.addAttribution('OSM');
@@ -128,27 +165,32 @@
                             mymap.locate();
                         }
 
-                        mymap.on('locationfound',function(e){
+                        
+                    });
+
+                    //Location Verifyers
+                    mymap.on('locationfound',function(e){
                             console.log(e);
                             //it verify if a marker has been setted to remove the last marked that it had. It helps to not overwrite a marker every time
-                            if(markerCurrentLocation){
-                                markerCurrentLocation.remove();
-                            }
                             
-                            //The marker is a tiny circle that shows where you are
+                           
+                                //The marker is a tiny circle that shows where you are
                             markerCurrentLocation= L.circleMarker(e.latlng).addTo(mymap);
                             
                             //this one is the same as the last marker but is a wider circle that takes as a radius the accuracy of your location /2, the accuracy is the diameter of your location
 
                             //markerCurrentLocation= L.circle(e.latlng,{radius:e.accuracy/2}).addTo(mymap);
                             mymap.setView(e.latlng,14);
+                            
+                                
+                            
+                            
                         });
 
                         mymap.on('locationerror',function(e){
                             console.log(e);
                             alert("location not found");
                         });
-                    });
 
                     //when we finish to zoom, it will get the current zoom and pass it to the zoom-level label
                     mymap.on('zoomend',function(){
@@ -169,26 +211,6 @@
                     //button location function
                     $("#btnLocate").click(function(){
                         mymap.locate();
-                        mymap.on('locationfound',function(e){
-                            console.log(e);
-                            //it verify if a marker has been setted to remove the last marked that it had. It helps to not overwrite a marker every time
-                            if(markerCurrentLocation){
-                                markerCurrentLocation.remove();
-                            }
-                            
-                            //The marker is a tiny circle that shows where you are
-                            markerCurrentLocation= L.circleMarker(e.latlng).addTo(mymap);
-                            
-                            //this one is the same as the last marker but is a wider circle that takes as a radius the accuracy of your location /2, the accuracy is the diameter of your location
-
-                            //markerCurrentLocation= L.circle(e.latlng,{radius:e.accuracy/2}).addTo(mymap);
-                            mymap.setView(e.latlng,14);
-                        });
-
-                        mymap.on('locationerror',function(e){
-                            console.log(e);
-                            alert("location not found");
-                        });
                     });
 
                     //This function zoom to pucmm
