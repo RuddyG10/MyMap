@@ -15,7 +15,6 @@
         <link rel="stylesheet" href="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css">
         <link rel="stylesheet" href="src/plugins/Leaflet.EasyButton/src/easy-button.css">
         <link rel="stylesheet" href="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.css">
-        
 
         <script src="src/leaflet/leaflet.js"></script>
         <script src="src/code.jquery.com_jquery-3.7.0.min.js"></script>
@@ -26,7 +25,7 @@
         <script src="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
         <script src="src/plugins/Leaflet.EasyButton/src/easy-button.js"></script>
         <script src="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.js"></script>
-       
+        <script src="src/plugins/leaflet-providers/leaflet-providers.js"></script>
         <style>
             #mapdiv{
                 height: 100vh;
@@ -47,6 +46,10 @@
                 //Variables declarations
                 var mymap;
                 var lyrOsm;
+                var lyrWaterColor;
+                var lyrTopo;
+                var lyrImagery;
+                var lyrOutdoors;
                 var markerCurrentLocation;
                 var locationEnabled = false;
                 var popPucmm;
@@ -60,12 +63,38 @@
                 var controlMeasure;
                 var easyButton;
                 var controlSideBar;
-
+                var controlLayers;
+                var objBasemaps;
+                var objLayers;
                 $(document).ready(function(){
                     mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
-                    lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
-                    mymap.addLayer(lyrOsm);
 
+                    //we add .provider for apply the provider plugin
+                    lyrOsm = L.tileLayer.provider('OpenStreetMap.Mapnik');
+                    mymap.addLayer(lyrOsm);
+                    //added some layers from provider plugin
+                    lyrTopo = L.tileLayer.provider('OpenTopoMap');
+                    mymap.addLayer(lyrOsm);
+                    lyrImagery = L.tileLayer.provider('Esri.WorldImagery');
+                    mymap.addLayer(lyrOsm);
+                    lyrOutdoors = L.tileLayer.provider('Stadia.Outdoors');
+                    mymap.addLayer(lyrOsm);
+                    lyrWaterColor = L.tileLayer.provider('Stamen.Watercolor');
+                    mymap.addLayer(lyrOsm);
+                    //object basemaps
+                    objBasemaps = {
+                        "Open Street Maps": lyrOsm,
+                        "Topo Map": lyrTopo,
+                        "Imagery":lyrImagery,
+                        "Outdoors":lyrOutdoors,
+                        "Watercolor":lyrWaterColor
+                    };
+
+                    //Object layers options
+                    objLayers = {};
+
+                    //control layers
+                    controlLayers = L.control.layers(objBasemaps, objLayers).addTo(mymap);
                     //Pan control
                     controlPan = L.control.pan().addTo(mymap);
                     
