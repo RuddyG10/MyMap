@@ -55,10 +55,41 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
             #mapdiv{
                 height: 100vh;
             }
+            .col-xs-12, .col-xs-6, .col-xs-4{
+                padding: 3px;
+            }
+            #divProject{
+                background-color: beige;
+            }
+            .errorMsg{
+                padding: 0;
+                text-align: center;
+                background-color: darksalmon;
+            }
+            
         </style>
     </head>
     <body>
         <div id="side-bar" class="col-md-12">
+
+            <div id="divProject" class="col-xs-12">
+                <div id="divProjectLabel" class="text-center col-xs-12">
+                    <h4>Linear Projects</h4>
+                </div>
+                <div id="divProjectError" class="errorMsg col-xs-12"></div>
+                <div id="divfindProject" class="form-group">
+                    <div class="col-xs-6">
+                        <input type="text" id="txtFindProject" class="form-control" placeholder="Project ID">
+                    </div>
+                    <div class="col-xs-6">
+                        <button id="btnFindProject" class="btn btn-primary btn-block">Find Project</button>
+                    </div>
+                </div>
+                <div id="projectData"></div>
+            </div>
+
+            <br>
+
             <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
             <button id="btnPucmm" class="btn btn-primary btn-block">Zoom To PUCMM</button>
             <button id="btnCentLeon" class="btn btn-primary btn-block">Zoom To Centro Leon</button>
@@ -88,7 +119,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                 var drawnLayer;
                 var layerEagleNest;
                 var lyrMarkerCluster;
-
+                var lyrClientLines;
+                var lyrSearch;
                 var raptorNest;
                 var locationEnabled = false;
                 var popPucmm;
@@ -114,6 +146,7 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
 
                 $(document).ready(function(){
 
+                    // **************MAP INITIALIZATION****************//
                     // //Sprite Icons
                     // icnRed = L.spriteIcon('red');
                     // icnViolet = L.spriteIcon('violet');
@@ -124,6 +157,23 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                     //Map
                     mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
 
+                     //Pan control
+                     controlPan = L.control.pan().addTo(mymap);
+                    //Control style
+                    controlStyle = L.control.styleEditor({position:'topright'}).addTo(mymap);
+                    //Side bar
+                    controlSideBar = L.control.sidebar('side-bar').addTo(mymap);
+                    //Zoom slider
+                    controlZSlider = L.control.zoomslider({position:'topright'}).addTo(mymap);
+
+                    //Control zoom 
+                    controlZoom = L.control.zoom({zoomInText:'In',zoomOutText:'Out', position:'topright'});
+                    controlZoom.addTo(mymap);
+
+                    //Polyline Measure control
+                    controlMeasure = L.control.polylineMeasure().addTo(mymap);
+
+                    //************LAYER INIT.*****************//
                     //we add .provider for apply the provider plugin
                     lyrOsm = L.tileLayer.provider('OpenStreetMap.Mapnik');
                     mymap.addLayer(lyrOsm);
@@ -151,6 +201,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                     featGParkRoute = L.featureGroup([plnPucmm,plyParkDorado]);
                     //drawn layers
                     drawnLayer = L.featureGroup().addTo(mymap);
+
+                    //**************SET UP LAYER CONTROL*******************//
                     //object basemaps
                     objBasemaps = {
                         "Open Street Maps": lyrOsm,
@@ -170,8 +222,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                         lyrMarkerCluster.addLayer(raptorNest);
                         lyrMarkerCluster.addTo(mymap);
                     });
-                
                     
+                    lyrClientLines = new L.GeoJSON.AJAX('/webmap101/data/client_lines.geojson').addTo(mymap);
                     //Object layers options
                     objLayers = {
                         //"Centro Leon Mark": markerCentLeon,
@@ -182,7 +234,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                        "Pucmm Polyline and Dorado Park": featGParkRoute,
                        "Drawn layers": drawnLayer,
                        "Eagle Nest": layerEagleNest,
-                       "Raptor Nest": lyrMarkerCluster
+                       "Raptor Nest": lyrMarkerCluster,
+                       "Client Layers": lyrClientLines
                     };
 
                     
@@ -190,22 +243,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
 
                     //control layers
                     controlLayers = L.control.layers(objBasemaps, objLayers).addTo(mymap);
-                    //Pan control
-                    controlPan = L.control.pan().addTo(mymap);
-                    //Control style
-                    controlStyle = L.control.styleEditor({position:'topright'}).addTo(mymap);
-                    //Side bar
-                    controlSideBar = L.control.sidebar('side-bar').addTo(mymap);
-                    //Zoom slider
-                    controlZSlider = L.control.zoomslider({position:'topright'}).addTo(mymap);
-
-                    //Control zoom 
-                    controlZoom = L.control.zoom({zoomInText:'In',zoomOutText:'Out', position:'topright'});
-                    controlZoom.addTo(mymap);
-
-                    //Polyline Measure control
-                    controlMeasure = L.control.polylineMeasure().addTo(mymap);
-
+                   
+                    //*******SET UP DRAW CONTROL*********//
                     //Control Draw
                     controlDraw = new L.Control.Draw({
                         draw:{
@@ -307,6 +346,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                         
                     });
 
+
+                    //LOCATION EVENTS//
                     //Location Verifyers
                     mymap.on('locationfound',function(e){
                             console.log(e);
@@ -330,7 +371,8 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                             console.log(e);
                             alert("location not found");
                         });
-
+                    
+                    //***********JQUERY EVENT HANDLERS**************//
                     //when we finish to zoom, it will get the current zoom and pass it to the zoom-level label
                     mymap.on('zoomend',function(){
 
@@ -407,6 +449,11 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                     });
                 });
                 
+
+
+
+
+                //*************GENERAL FUNCTIONS******************//
                 function LatLngToArrayString(ll){
                     return "["+ll.lat.toFixed(5)+","+ll.lng.toFixed(5)+"]";
                 }
@@ -462,6 +509,35 @@ https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEd
                     }
                     return L.circleMarker(latlng,optRaptor).bindTooltip("<h4>Raptor NEST: "+att.Nest_ID+"</h4>Status: "+att.recentstatus+"<br> Species: "+att.recentspecies+"<br>Last Survey: "+att.lastSurvey);
                 }
+
+                function returnClientLineByID(id){
+                    var arLayers = lyrClientLines.getLayers();
+                    for(i=0;i<arLayers.length-1;i++){
+                        var featureID = arLayers[i].feature.properties.Project;
+                        console.log(featureID);
+                        if(featureID==id){
+                            return arLayers[i];
+                        }
+                    }
+                    return false;
+                }
+                $("#btnFindProject").click(function(){
+                    var id = $("#txtFindProject").val();
+                    var lyr = returnClientLineByID(id);
+                    if(lyr){
+                        if(lyrSearch){
+                            lyrSearch.remove();
+                        }
+                        lyrSearch = L.geoJSON(lyr.toGeoJSON(), {style:{color:'red',weight:10,opacity:0.5}}).addTo(mymap);
+                        mymap.fitBounds(lyr.getBounds().pad(1));
+                        var att = lyr.feature.properties;
+                        $('#divProjectData').html("<h4 class='text-center'>Attributes</h4><h5>Type: "+att.type+"</h5><h5>ROW width: "+att.row_width+"m</h5>");
+                    }
+                    else{
+                        $("#divProjectError").html("Project ID not found");
+                    }
+                });
+
             </script>
         </div>
     </body>
