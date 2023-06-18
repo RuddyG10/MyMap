@@ -15,6 +15,18 @@
         <link rel="stylesheet" href="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css">
         <link rel="stylesheet" href="src/plugins/Leaflet.EasyButton/src/easy-button.css">
         <link rel="stylesheet" href="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
+        <link href="
+https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/css/Leaflet.StyleEditor.min.css
+" rel="stylesheet">
+        <link rel="stylesheet" href="src/fontawesome-free-6.4.0-web/fontawesome-free-6.4.0-web/css/fontawesome.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.awesome-markers/dist/leaflet.awesome-markers.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.markercluster/dist/MarkerCluster.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.markercluster/dist/MarkerCluster.Default.css">
+
+        
+        
+
         
 
         <script src="src/leaflet/leaflet.js"></script>
@@ -26,17 +38,65 @@
         <script src="src/plugins/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
         <script src="src/plugins/Leaflet.EasyButton/src/easy-button.js"></script>
         <script src="src/plugins/leaflet-sidebar/src/L.Control.Sidebar.js"></script>
-       
+        <script src="src/plugins/leaflet-providers/leaflet-providers.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+        <script src="
+        https://cdn.jsdelivr.net/npm/leaflet-styleeditor@0.1.21/dist/javascript/Leaflet.StyleEditor.min.js
+        "></script>
+        
+        <script src="/webmap101/src/plugins/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
+        <script src="/webmap101/src/plugins/leaflet.sprite/dist/leaflet.sprite.js"></script>
+        <script src="src/plugins/Leaflet.awesome-markers/dist/leaflet.awesome-markers.min.js"></script>
+        <script src="src/fontawesome-free-6.4.0-web/fontawesome-free-6.4.0-web/js/fontawesome.js"></script>
+        <script src="src/plugins/Leaflet.markercluster/leaflet.markercluster.js"></script>
+<!--    **************  End of Lealet Draw-->
+
         <style>
             #mapdiv{
                 height: 100vh;
             }
+            .col-xs-12, .col-xs-6, .col-xs-4{
+                padding: 3px;
+            }
+            #divProject{
+                background-color: beige;
+            }
+            .errorMsg{
+                padding: 0;
+                text-align: center;
+                background-color: darksalmon;
+            }
+            
         </style>
     </head>
     <body>
         <div id="side-bar" class="col-md-12">
+
+            <div id="divProject" class="col-xs-12">
+                <div id="divProjectLabel" class="text-center col-xs-12">
+                    <h4>Linear Projects</h4>
+                </div>
+                <div id="divProjectError" class="errorMsg col-xs-12"></div>
+                <div id="divfindProject" class="form-group">
+                    <div class="col-xs-6">
+                        <input type="text" id="txtFindProject" class="form-control" placeholder="Project ID">
+                    </div>
+                    <div class="col-xs-6">
+                        <button id="btnFindProject" class="btn btn-primary btn-block">Find Project</button>
+                    </div>
+                </div>
+                <div id="projectData"></div>
+            </div>
+
+            <br>
+
             <button id="btnLocate" class="btn btn-primary btn-block">Locate</button>
-            <button id="btnPucmm" class="btn btn-primary btn-block">ZoomToPUCMM</button>
+            <button id="btnPucmm" class="btn btn-primary btn-block">Zoom To PUCMM</button>
+            <button id="btnCentLeon" class="btn btn-primary btn-block">Zoom To Centro Leon</button>
+            <button id="btnPlnPucmm" class="btn btn-primary btn-block">Show route in Pucmm</button>
+            <button id="btnAddCent" class="btn btn-primary btn-block">Add Centro Leon To vector group</button>
+            <button id="btnEagleNest" class="btn btn-primary btn-block">Zoom to Eagle Nest</button>
+            <button id="btnRaptorNest" class="btn btn-primary btn-block">Zoom to Raptor Nest</button>
             <h4>Zoom level: <span id="zoom-level"></span></h4>
             <h4>Map Center: <span id="map-center"></span></h4>
             <h4>Mouse Location: <span id="mouse-location"></span></h4>
@@ -47,7 +107,21 @@
                 //Variables declarations
                 var mymap;
                 var lyrOsm;
+                var lyrWaterColor;
+                var lyrTopo;
+                var lyrImagery;
+                var lyrOutdoors;
                 var markerCurrentLocation;
+                var markerCentLeon;
+                var plnPucmm;
+                var plyParkDorado;
+                var featGParkRoute;
+                var drawnLayer;
+                var layerEagleNest;
+                var lyrMarkerCluster;
+                var lyrClientLines;
+                var lyrSearch;
+                var raptorNest;
                 var locationEnabled = false;
                 var popPucmm;
                 var popExample;
@@ -60,15 +134,33 @@
                 var controlMeasure;
                 var easyButton;
                 var controlSideBar;
+                var controlLayers;
+                var controlDraw;
+                var controlStyle;
+                var objBasemaps;
+                var objLayers;
+                // var icnRed;
+                // var icnViolet;
+                // var AmTree;
+                // var AmBird
 
                 $(document).ready(function(){
-                    mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
-                    lyrOsm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
-                    mymap.addLayer(lyrOsm);
 
-                    //Pan control
-                    controlPan = L.control.pan().addTo(mymap);
-                    
+                    // **************MAP INITIALIZATION****************//
+                    // //Sprite Icons
+                    // icnRed = L.spriteIcon('red');
+                    // icnViolet = L.spriteIcon('violet');
+
+                    // //Awesom markers
+                    // AmTree = L.AwesomeMarkers.icon({icon:'fa-tree',markerColor:'green',prefix:'fa'});
+                    // AmBird = L.AwesomeMarkers.icon({icon:'twitter',markerColor:'blue'});
+                    //Map
+                    mymap = L.map('mapdiv',{center:[19.44, -70.68],zoom:13, zoomControl:false, attributionControl:false});
+
+                     //Pan control
+                     controlPan = L.control.pan().addTo(mymap);
+                    //Control style
+                    controlStyle = L.control.styleEditor({position:'topright'}).addTo(mymap);
                     //Side bar
                     controlSideBar = L.control.sidebar('side-bar').addTo(mymap);
                     //Zoom slider
@@ -81,6 +173,92 @@
                     //Polyline Measure control
                     controlMeasure = L.control.polylineMeasure().addTo(mymap);
 
+                    //************LAYER INIT.*****************//
+                    //we add .provider for apply the provider plugin
+                    lyrOsm = L.tileLayer.provider('OpenStreetMap.Mapnik');
+                    mymap.addLayer(lyrOsm);
+                    //added some layers from provider plugin
+                    lyrTopo = L.tileLayer.provider('OpenTopoMap');
+                    mymap.addLayer(lyrOsm);
+                    lyrImagery = L.tileLayer.provider('Esri.WorldImagery');
+                    mymap.addLayer(lyrOsm);
+                    lyrOutdoors = L.tileLayer.provider('Stadia.Outdoors');
+                    mymap.addLayer(lyrOsm);
+                    lyrWaterColor = L.tileLayer.provider('Stamen.Watercolor');
+                    mymap.addLayer(lyrOsm);
+
+                    //Marker for Centro Leon
+                    markerCentLeon = L.marker([19.463056, -70.670757],{draggable:true});
+                    markerCentLeon.bindTooltip("Centro Leon Jimenes");
+
+                    //Polyline of pucmm
+                    plnPucmm = L.polyline([[19.443682, -70.684182],[19.443682, -70.683911],[19.44333, -70.683417],[19.442994, -70.68394],[19.442583, -70.683739],[19.442495, -70.683688],[19.442463, -70.683635],[19.442341, -70.683618],[19.441942, -70.683718],[19.441904, -70.683506],[19.441869, -70.68345],[19.441849, -70.683366],[19.441704, -70.683369],[19.441677, -70.683342],[19.441646, -70.682693],[19.441459, -70.682688],[19.441442, -70.683117],[19.440312, -70.683104]],{color:'purple'});
+
+                    //Polygon of the Dorado II park
+                    plyParkDorado = L.polygon([[19.464031, -70.6585],[19.46346, -70.658494],[19.463268, -70.659921],[19.464046, -70.659986],[19.464087, -70.659417],[19.463925, -70.659395],[19.46394, -70.659154]],{fillOpacity:0.5});
+
+                    //feature group
+                    featGParkRoute = L.featureGroup([plnPucmm,plyParkDorado]);
+                    //drawn layers
+                    drawnLayer = L.featureGroup().addTo(mymap);
+
+                    //**************SET UP LAYER CONTROL*******************//
+                    //object basemaps
+                    objBasemaps = {
+                        "Open Street Maps": lyrOsm,
+                        "Topo Map": lyrTopo,
+                        "Imagery":lyrImagery,
+                        "Outdoors":lyrOutdoors,
+                        "Watercolor":lyrWaterColor
+                    };
+                    //GeoJson layers
+                    layerEagleNest = new L.GeoJSON.AJAX('/webmap101/data/wildlife_eagle.geojson',{pointToLayer:returnEagleMarker, filter:filterEagleNest}).addTo(mymap);
+
+                    //MarkerCluster
+                    lyrMarkerCluster = L.markerClusterGroup();
+
+                    raptorNest = new L.GeoJSON.AJAX('/webmap101/data/wildlife_raptor.geojson',{pointToLayer:returnRaptorMarkers});
+                    raptorNest.on('data:loaded',function(){
+                        lyrMarkerCluster.addLayer(raptorNest);
+                        lyrMarkerCluster.addTo(mymap);
+                    });
+                    
+                    lyrClientLines = new L.GeoJSON.AJAX('/webmap101/data/client_lines.geojson').addTo(mymap);
+                    //Object layers options
+                    objLayers = {
+                        //"Centro Leon Mark": markerCentLeon,
+                        /*
+                        "Pucmm Route": plnPucmm,
+                        "Park Dorado II Polygon": plyParkDorado
+                        */
+                       "Pucmm Polyline and Dorado Park": featGParkRoute,
+                       "Drawn layers": drawnLayer,
+                       "Eagle Nest": layerEagleNest,
+                       "Raptor Nest": lyrMarkerCluster,
+                       "Client Layers": lyrClientLines
+                    };
+
+                    
+
+
+                    //control layers
+                    controlLayers = L.control.layers(objBasemaps, objLayers).addTo(mymap);
+                   
+                    //*******SET UP DRAW CONTROL*********//
+                    //Control Draw
+                    controlDraw = new L.Control.Draw({
+                        draw:{
+                            circle:false
+                        },
+                        edit:{
+                            featureGroup:featGParkRoute
+                        }
+                    }).addTo(mymap);
+                    
+                    mymap.on('draw:created',function(e){
+                        console.log(e);
+                        drawnLayer.addLayer(e.layer);
+                    });
                     //Easy Buttom to lacation
                     easyButton = L.easyButton('<i class="bi bi-compass-fill"></i>',function(){
 
@@ -121,7 +299,7 @@
                     //The content that the popUp will have
                     popPucmm.setContent("<h2>PUCMM</h2><img src='img/PUCMM-Campus-Santiago.jpg' width='200px'>")
 
-
+                    
                     //In this popUp we will show the side-bar elements inside it.
                     /*
                     popExample = L.popup();
@@ -168,6 +346,8 @@
                         
                     });
 
+
+                    //LOCATION EVENTS//
                     //Location Verifyers
                     mymap.on('locationfound',function(e){
                             console.log(e);
@@ -191,7 +371,8 @@
                             console.log(e);
                             alert("location not found");
                         });
-
+                    
+                    //***********JQUERY EVENT HANDLERS**************//
                     //when we finish to zoom, it will get the current zoom and pass it to the zoom-level label
                     mymap.on('zoomend',function(){
 
@@ -208,6 +389,11 @@
                         $("#mouse-location").html(LatLngToArrayString(e.latlng));
                     });
 
+                    //Centro leon event handler
+                    markerCentLeon.on('dragend', function(){
+                        markerCentLeon.setTooltipContent("Current Location: "+markerCentLeon.getLatLng().toString() + "<br>"+"Distance to Centro Leon: "+markerCentLeon.getLatLng().distanceTo([19.463056, -70.670757]).toFixed(0));
+                    });
+
                     //button location function
                     $("#btnLocate").click(function(){
                         mymap.locate();
@@ -220,11 +406,138 @@
                         //it will open the popup that we created above
                         mymap.openPopup(popPucmm);
                     });
+
+                    //Zoom to eagleNest
+                    $('#btnEagleNest').click(function (){
+                        mymap.setView([40.158572, -104.927673],9)
+                    });
+                    //Zoom to raptor Nest
+                    $('#btnRaptorNest').click(function (){
+                        mymap.setView([40.158572, -104.927673],9)
+                    });
+                    //Zoom to Centro leon event
+                    $("#btnCentLeon").click(function(){
+
+                        mymap.setView([19.463056, -70.670757],17);
+                        markerCentLeon.setLatLng([19.463056, -70.670757]);
+                        markerCentLeon.setTooltipContent("Centro Leon Jimenez");
+                    });
+                    //Zoom to Centro leon event
+                    $("#btnCentLeon").click(function(){
+
+                        mymap.setView([19.463056, -70.670757],17);
+                        markerCentLeon.setLatLng([19.463056, -70.670757]);
+                        markerCentLeon.setTooltipContent("Centro Leon Jimenez");
+                    });
+                    //Event to show a polyline in Pucmm
+                    $("#btnPlnPucmm").click(function(){
+
+                    mymap.fitBounds(plnPucmm.getBounds());
+                    
+                    });
+
+                    $("#btnAddCent").click(function(){
+                        if(featGParkRoute.hasLayer(markerCentLeon)){
+                            featGParkRoute.removeLayer(markerCentLeon);
+                            $("#btnAddCent").html("Add Centro Leon to vector group");
+                        }
+                        else{
+                            featGParkRoute.addLayer(markerCentLeon);
+                            $("#btnAddCent").html("Remove Centro Leon to vector group");
+                        }
+                        
+                    });
                 });
                 
+
+
+
+
+                //*************GENERAL FUNCTIONS******************//
                 function LatLngToArrayString(ll){
                     return "["+ll.lat.toFixed(5)+","+ll.lng.toFixed(5)+"]";
                 }
+
+
+                function returnEagleMarker(json,latlng){
+                    var att = json.properties;
+
+                    if(att.status = 'ACTIVE NEST'){
+                        
+                        var wgtNest = 5;
+                        var opcNest = 1;
+                        
+                    }
+                    else{
+                        var clrNest = 1;
+                        var clrNest = 0.5;
+                    }
+                    return L.circleMarker(latlng,{radius: 10, color:'green', weight: wgtNest, opacity:opcNest,fillColor:'lightgreen', fillOpacity:0.5}).bindTooltip("<h4>Eagle Nest: "+ att.nest_id+"</h4>Status: "+att.status);
+                    // if(att.status == 'ACTIVE NEST'){
+                    //     //var icnEagle = icnRed;
+                    //     var icnEagle = AmTree;
+                    // }
+                    // else{
+                    //     //var icnEagle = icnViolet;
+                    //     var icnEagle = AmBird;
+                    // }
+                    // return L.marker(latlng,{icon:icnEagle});
+                }
+
+                function filterEagleNest(json){
+                    var att = json.properties;
+                    if(att.status=='ACTIVE NEST'){
+                        return true;
+                    }
+                    else{
+                        return false;
+                    }
+                }
+
+                function returnRaptorMarkers(json, latlng){
+                    var att = json.properties;
+                    switch(att.recentstatus){
+                        case 'ACTIVE NEST':
+                            var optRaptor = {radius:10,color:'deeppink',fillColor:'blue',fillOpacity:0.5};
+                            break;
+                        case 'INACTIVE NEST':
+                            var optRaptor = {radius:10,color:'blue',fillColor:'blue',fillOpacity:0.5};
+                            break;
+                        case 'FLEDGED NEST':
+                            var optRaptor = {radius:10,color:'deeppink',fillColor:'blue',fillOpacity:0.5};
+                            break;
+                    }
+                    return L.circleMarker(latlng,optRaptor).bindTooltip("<h4>Raptor NEST: "+att.Nest_ID+"</h4>Status: "+att.recentstatus+"<br> Species: "+att.recentspecies+"<br>Last Survey: "+att.lastSurvey);
+                }
+
+                function returnClientLineByID(id){
+                    var arLayers = lyrClientLines.getLayers();
+                    for(i=0;i<arLayers.length-1;i++){
+                        var featureID = arLayers[i].feature.properties.Project;
+                        console.log(featureID);
+                        if(featureID==id){
+                            return arLayers[i];
+                        }
+                    }
+                    return false;
+                }
+                $("#btnFindProject").click(function(){
+                    var id = $("#txtFindProject").val();
+                    var lyr = returnClientLineByID(id);
+                    if(lyr){
+                        if(lyrSearch){
+                            lyrSearch.remove();
+                        }
+                        lyrSearch = L.geoJSON(lyr.toGeoJSON(), {style:{color:'red',weight:10,opacity:0.5}}).addTo(mymap);
+                        mymap.fitBounds(lyr.getBounds().pad(1));
+                        var att = lyr.feature.properties;
+                        $('#divProjectData').html("<h4 class='text-center'>Attributes</h4><h5>Type: "+att.type+"</h5><h5>ROW width: "+att.row_width+"m</h5>");
+                    }
+                    else{
+                        $("#divProjectError").html("Project ID not found");
+                    }
+                });
+
             </script>
         </div>
     </body>
